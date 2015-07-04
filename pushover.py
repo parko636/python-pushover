@@ -179,6 +179,8 @@ class Client:
     def __init__(self, user_key=None, device=None, api_token=None,
                  config_path="~/.pushoverrc", profile="Default"):
         self.user_key = user_key
+        if api_token is not None:
+            init(api_token)
         if not self.user_key:
             raise UserError
         self.device = device
