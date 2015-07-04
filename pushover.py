@@ -15,10 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import time
-from ConfigParser import RawConfigParser, NoSectionError
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import os
-
 import requests
 
 __all__ = ["init", "get_sounds", "Client", "MessageRequest",
@@ -181,11 +178,10 @@ class Client:
 
     def __init__(self, user_key=None, device=None, api_token=None,
                  config_path="~/.pushoverrc", profile="Default"):
-        params = _get_config(profile, config_path, user_key, api_token)
-        self.user_key = params["user_key"]
+        self.user_key = user_key
         if not self.user_key:
             raise UserError
-        self.device = params["device"]
+        self.device = device
         self.devices = []
 
     def verify(self, device=None):
@@ -241,62 +237,3 @@ class Client:
                 payload[key] = value
 
         return MessageRequest(payload)
-
-
-def _get_config(profile='Default', config_path='~/.pushoverrc',
-                user_key=None, api_token=None):
-    config_path = os.path.expanduser(config_path)
-    config = RawConfigParser()
-    config.read(config_path)
-    params = {"user_key": None, "api_token": None, "device": None}
-    try:
-        params.update(dict(config.items(profile)))
-    except NoSectionError:
-        pass
-    if user_key:
-        params["user_key"] = user_key
-    if api_token:
-        params["api_token"] = api_token
-
-    if not TOKEN:
-        init(params["api_token"])
-        if not TOKEN:
-            raise InitError
-
-    return params
-
-
-def main():
-    parser = ArgumentParser(description="Send a message to pushover.",
-                            formatter_class=RawDescriptionHelpFormatter,
-                            epilog="""
-For more details and bug reports, see: https://github.com/Thibauth/python-pushover""")
-    parser.add_argument("--api-token", help="Pushover application token")
-    parser.add_argument("--user-key", "-u", help="Pushover user key")
-    parser.add_argument("message", help="message to send")
-    parser.add_argument("--title", "-t", help="message title")
-    parser.add_argument("--priority", "-p", help="message priority")
-    parser.add_argument("--url", help="additional url")
-    parser.add_argument("--url-title", help="additional url title")
-    parser.add_argument("-c", "--config", help="configuration file\
-                        (default: ~/.pushoverrc)", default="~/.pushoverrc")
-    parser.add_argument("--profile", help="profile to read in the\
-                        configuration file (default: Default)",
-                        default="Default")
-    parser.add_argument("--version", "-v", action="version",
-                        help="output version information and exit",
-                        version="""
-%(prog)s 0.2
-Copyright (C) 2013-2014 Thibaut Horel <thibaut.horel@gmail.com>
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.""")
-
-    args = parser.parse_args()
-    Client(args.user_key, None, args.api_token, args.config,
-           args.profile).send_message(args.message, title=args.title,
-                                      priority=args.priority, url=args.url,
-                                      url_title=args.url_title, timestamp=True)
-
-if __name__ == "__main__":
-    main()
